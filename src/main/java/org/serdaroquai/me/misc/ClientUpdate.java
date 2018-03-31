@@ -4,6 +4,8 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.serdaroquai.me.entity.Estimation;
+
 @SuppressWarnings("serial")
 public class ClientUpdate implements Serializable{
 
@@ -16,7 +18,7 @@ public class ClientUpdate implements Serializable{
 	}
 	
 	private Type type;
-	private Map<String,Object> payload = new HashMap<String,Object>();
+	private Map<String,Estimation> payload = new HashMap<String,Estimation>();
 	
 	public ClientUpdate() {}
 	
@@ -25,11 +27,11 @@ public class ClientUpdate implements Serializable{
 		this.payload = b.payload;
 	}
 	
-	public Map<String, Object> getPayload() {
+	public Map<String, Estimation> getPayload() {
 		return payload;
 	}
 	
-	public Object get(String key) {
+	public Estimation get(String key) {
 		return payload.get(key);
 	}
 	
@@ -40,13 +42,13 @@ public class ClientUpdate implements Serializable{
 	public static class Of {
 		
 		Type type;
-		Map<String,Object> payload = new HashMap<String,Object>();
+		Map<String,Estimation> payload = new HashMap<String,Estimation>();
 		
 		public Of(Type type) {
 			this.type = type;
 		}
 		
-		public Of with(String key, Object value) {
+		public Of with(String key, Estimation value) {
 			payload.put(key,value);
 			return this;
 		}
@@ -58,7 +60,7 @@ public class ClientUpdate implements Serializable{
 
 	@Override
 	public String toString() {
-		return "UIUpdate ["+ type + ", " + payload + "]";
+		return "ClientUpdate ["+ type + ", " + payload + "]";
 	}
 	
 	

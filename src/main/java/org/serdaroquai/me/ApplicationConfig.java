@@ -1,29 +1,23 @@
 package org.serdaroquai.me;
 
-import java.net.InetSocketAddress;
-import java.net.Proxy;
-import java.net.Proxy.Type;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.event.ApplicationEventMulticaster;
 import org.springframework.context.event.SimpleApplicationEventMulticaster;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.AsyncConfigurer;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.socket.client.WebSocketClient;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
@@ -33,8 +27,6 @@ import org.springframework.web.socket.messaging.WebSocketStompClient;
 import org.springframework.web.socket.sockjs.client.SockJsClient;
 import org.springframework.web.socket.sockjs.client.Transport;
 import org.springframework.web.socket.sockjs.client.WebSocketTransport;
-import org.telegram.telegrambots.ApiContextInitializer;
-import org.telegram.telegrambots.exceptions.TelegramApiRequestException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -82,16 +74,6 @@ public class ApplicationConfig implements AsyncConfigurer, WebSocketMessageBroke
 		SimpleAsyncTaskExecutor taskExecutor = new SimpleAsyncTaskExecutor();
 		return taskExecutor;
 	}
-    
-	@Bean
-	TelegramBot telegramBot(@Value("${telegram.token}") String token, 
-			@Value("${telegram.botname}") String botname,
-			@Value("${telegram.chatId}") String chatId) throws TelegramApiRequestException {
-		
-		ApiContextInitializer.init();
-        return new TelegramBot(token, botname, chatId);
-
-	}
 	
 	//jackson json object mapper for manual mapping
 	@Bean
@@ -99,27 +81,15 @@ public class ApplicationConfig implements AsyncConfigurer, WebSocketMessageBroke
 		return new ObjectMapper();
 	}
 	
-	@Bean
-	public RestTemplate restTemplate(@Value("${proxy.ip:}") String ip, @Value("${proxy.port:}")String port) {
-	    SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-	    if (!"".equals(ip) && !"".equals(port)) {
-	    	Proxy proxy= new Proxy(Type.HTTP, new InetSocketAddress(ip, Integer.valueOf(port)));
-	    	requestFactory.setProxy(proxy);
-	    	requestFactory.setConnectTimeout(2000);
-	    	requestFactory.setReadTimeout(2000);
-	    }
-	    return new RestTemplate(requestFactory);
-	}
-	
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
-        config.enableSimpleBroker("/topic", "/queue");
-        config.setApplicationDestinationPrefixes("/app");
-        config.setUserDestinationPrefix("/user");
+//        config.enableSimpleBroker("/topic", "/queue");
+//        config.setApplicationDestinationPrefixes("/app");
+//        config.setUserDestinationPrefix("/user");
     }
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint("/pokerNight").withSockJS();
+        registry.addEndpoint("/dummy").withSockJS();
     }
 }

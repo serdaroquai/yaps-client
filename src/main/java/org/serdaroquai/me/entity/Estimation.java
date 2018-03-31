@@ -18,17 +18,7 @@ public class Estimation {
 	Integer blockHeight;
 	
 	public Estimation() {}
-	
-	public Estimation(BigDecimal btcRevenue, Difficulty difficulty) {
-		this.btcRevenue = btcRevenue;
-		
-		this.timestamp = difficulty.getTimestamp();
-		this.algo = difficulty.getAlgo();
-		this.symbol = difficulty.getSymbol();
-		this.difficulty = difficulty.getDifficulty();
-		this.blockHeight = difficulty.getBlockHeight();
-	}
-	
+
 	public String getId() {
 		return id;
 	}
