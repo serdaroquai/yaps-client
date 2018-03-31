@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Poker Night</title>
+    <link href="/webjars/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/main.css" rel="stylesheet">
+    <script src="/webjars/jquery/jquery.min.js"></script>
+    <script src="/webjars/sockjs-client/sockjs.min.js"></script>
+    <script src="/webjars/stomp-websocket/stomp.min.js"></script>
+    <script src="/pixi.min.js"></script>
+    <script src="/pixi-display.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.1/Chart.js"></script>
+</head>
+<body>
+<noscript><h2 style="color: #ff0000">Seems your browser doesn't support Javascript! Websocket relies on Javascript being
+    enabled. Please enable
+    Javascript and reload this page!</h2></noscript>
+<div class="container-fluid">
+	<div class="row">
+		<div class="col-lg-6">
+        		<div class="row">
+        			<button id="startProfitSwitching">Start Automatic Switching</button>
+        			<button id="stopProfitSwitching">Pause Automatic Switching</button>
+        			<button id="stopMiner">Stop Miner</button>
+					<button id="clearScreen">Clear Screen</button>
+        		</div>
+        		<div class="row">
+		        	<button id="X17">Mine X17</button>
+		        	<button id="PHI1612">Mine PHI1612</button>
+		        	<button id="Lyra2REv2">Mine Lyra2Rev2</button>
+		        	<button id="NeoScrypt">Mine NeoScrypt</button>
+		        	<button id="NIST5">Mine NIST5</button>
+		        	<button id="Tribus">Mine Tribus</button>
+		        	<button id="Xevan">Mine Xevan</button>
+		        	<button id="X11Gost">Mine X11Gost(sib)</button>
+		        	<button id="Skein">Mine Skein</button>
+	        	</div>
+        </div>
+	</div>
+    <div class="row">
+        <div class="col-lg-6">
+        	<canvas id="estimationsChart" width="800" height="600"></canvas>
+        </div>
+        <div class="col-lg-6">
+        	<canvas id="poolEstimationsChart" width="800" height="600"></canvas>
+        </div>
+        <div class="col-lg-6">
+        	<canvas id="blockChancesChart" width="800" height="600"></canvas>
+        </div>
+        
+    </div>
+    <div class="row">
+	    <div id="minerLog">
+	    </div>
+	</div>
+    
+    <script src="/game.js"></script>
+</div>
+</body>
+</html>
