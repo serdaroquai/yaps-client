@@ -9,7 +9,8 @@ public class Action implements Serializable {
 		stopMiner,
 		changeAlgo,
 		register,
-		setProfitSwitching
+		setProfitSwitching,
+		alive
 	}
 	
 	private Command command;

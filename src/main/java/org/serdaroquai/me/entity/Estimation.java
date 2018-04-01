@@ -3,12 +3,10 @@ package org.serdaroquai.me.entity;
 import java.math.BigDecimal;
 
 import org.serdaroquai.me.misc.Algorithm;
-import org.springframework.data.annotation.Id;
 
 
 public class Estimation {
 
-	@Id
     String id;
 	BigDecimal btcRevenue;
 	long timestamp;

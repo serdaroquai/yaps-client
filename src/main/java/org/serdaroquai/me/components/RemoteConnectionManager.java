@@ -27,7 +27,7 @@ import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
 
 @Component
-public class RemoteManager implements StompSessionHandler{
+public class RemoteConnectionManager implements StompSessionHandler{
 
 	private final Logger logger = LoggerFactory.getLogger(this.getClass());
 	
@@ -56,6 +56,14 @@ public class RemoteManager implements StompSessionHandler{
 		}
 	}
 	
+	public void send(Object message) {
+		if (isConnected.get() && stompSession != null) {
+			logger.info(String.format("Sending %s", message));
+			stompSession.send("/app/message", message);
+		}
+	}
+	
+	
 	@Override
 	public void afterConnected(StompSession session, StompHeaders connectedHeaders) {
 		logger.info(String.format("Connected to websocket %s", session.toString()));
@@ -65,7 +73,7 @@ public class RemoteManager implements StompSessionHandler{
 		subscriptions.put("/topic/estimations", subscription);
 		
 		// send register message
-		stompSession.send("/app/message",new Action(Command.register,null));
+		send(new Action(Command.register,null));
 	}
 	
 	@Override
@@ -84,10 +92,12 @@ public class RemoteManager implements StompSessionHandler{
 	@Override
 	public void handleFrame(StompHeaders headers, Object stompPayload) {
 		
-		//TODO more than just receiving estimations
-		Estimation estimation = ((ClientUpdate) stompPayload).get("payload");
+		if (headers.get("destination").get(0).equals("/topic/estimations")) {
+			Estimation estimation = ((ClientUpdate) stompPayload).get("payload");
+			logger.info(estimation.toString());
+			applicationEventPublisher.publishEvent(new EstimationEvent(this, estimation));			
+		}
 		
-		applicationEventPublisher.publishEvent(new EstimationEvent(this, estimation));
 	}
 	
 	@Override
@@ -97,6 +107,9 @@ public class RemoteManager implements StompSessionHandler{
 	
 	private void disconnect() {
 		isConnected.set(false);
+		if (stompSession != null) {
+			stompSession.disconnect();
+		}
 		stompSession = null;
 		subscriptions.clear();		
 	}

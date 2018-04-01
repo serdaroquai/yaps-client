@@ -169,7 +169,7 @@ public class MinerManager {
 	}
 	
 	private boolean shouldChangeAlgo() {
-		return profitSwitching && !targetAlgo.equals(activeAlgo);
+		return profitSwitching && targetAlgo != null && !targetAlgo.equals(activeAlgo);
 	}
 	
 	public Optional<LocalDateTime> getStartedSince() {
