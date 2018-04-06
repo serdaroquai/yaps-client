@@ -123,11 +123,11 @@ public class RemoteConnectionManager implements StompSessionHandler{
 	}
 	
 	private void disconnect() {
+		isConnected.set(false);
 		if (stompSession != null) {
 			stompSession.disconnect();
 		}
 		stompSession = null;
-		isConnected.set(false);
 	}
 	
 }
