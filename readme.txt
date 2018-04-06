@@ -1,12 +1,12 @@
-Installation
+#Installation
 
-1. send a /subscribe message to @YapsNotificationBot using TelegramWeb(easier to copy paste). It will return a token and an userId, note them down later to place in your properties file.
-2. Create a base folder (D:\minerwatch) and copy yaps-client-0.1.0.jar
-3. Copy the miner softwares you will use
-4. Prepare an application.properties file in the same folder with your jar. You can find a sample file below
-5. Don't forget to fill "token" and "userId" fields using step 1.
-6. Make a windows shortcut to start yaps-client (C:\ProgramData\Oracle\Java\javapath\java.exe -jar "D:\minerwatch\yaps-client-0.1.0.jar"). Also don't forget to set the working directory to your root folder where yaps-client-0.1.0.jar sits. ("D:\minerwatch")
-7. Copy this shortcut you have created to your windows start folder. (C:\Users\<username>\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup)
+#1. send a /subscribe message to @YapsNotificationBot using TelegramWeb(easier to copy paste). It will return a token and an userId, note them down later to place in your properties file.
+#2. Create a base folder (D:\minerwatch) and copy yaps-client-0.1.0.jar
+#3. Copy the miner softwares you will use
+#4. Prepare an application.properties file in the same folder with your jar. You can find a sample file below
+#5. Don't forget to fill "token" and "userId" fields using step 1.
+#6. Make a windows shortcut to start yaps-client (C:\ProgramData\Oracle\Java\javapath\java.exe -jar "D:\minerwatch\yaps-client-0.1.0.jar"). Also don't forget to set the working directory to your root folder where yaps-client-0.1.0.jar sits. ("D:\minerwatch")
+#7. Copy this shortcut you have created to your windows start folder. (C:\Users\<username>\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup)
 
 
 #-------------------------------------
