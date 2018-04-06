@@ -5,22 +5,22 @@ import java.io.Serializable;
 @SuppressWarnings("serial")
 public class Action implements Serializable {
 	
-	public static enum Command {
+	/*
 		stopMiner,
 		changeAlgo,
 		register,
 		setProfitSwitching,
 		alive
-	}
+	*/
 	
-	private Command command;
+	private String command;
 	private Object payload;
 	
 	public Action() {
 		//Jackson Constructor
 	}
 	
-	public Action(Command type, Object payload) {
+	public Action(String type, Object payload) {
 		this.command = type;
 		this.payload = payload;
 	}
@@ -34,11 +34,11 @@ public class Action implements Serializable {
 		this.payload = payload;
 	}
 	
-	public Command getCommand() {
+	public String getCommand() {
 		return command;
 	}
 	
-	public void setCommand(Command type) {
+	public void setCommand(String type) {
 		this.command = type;
 	}
 

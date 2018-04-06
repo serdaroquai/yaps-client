@@ -1,13 +1,9 @@
 package org.serdaroquai.me.components;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.json.JSONException;
-import org.serdaroquai.me.Action;
-import org.serdaroquai.me.Action.Command;
 import org.serdaroquai.me.entity.Estimation;
 import org.serdaroquai.me.event.EstimationEvent;
 import org.serdaroquai.me.misc.ClientUpdate;
@@ -19,26 +15,33 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaders;
 import org.springframework.messaging.simp.stomp.StompSession;
-import org.springframework.messaging.simp.stomp.StompSession.Subscription;
 import org.springframework.messaging.simp.stomp.StompSessionHandler;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.concurrent.ListenableFuture;
+import org.springframework.web.socket.WebSocketHttpHeaders;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Component
 public class RemoteConnectionManager implements StompSessionHandler{
 
 	private final Logger logger = LoggerFactory.getLogger(this.getClass());
 	
-	@Autowired WebSocketStompClient stompClient; 
 	@Value("${remote.url:ws://yaps.serdarbaykan.com:8090/pokerNight}") String remoteUrl;
-	@Autowired ApplicationEventPublisher applicationEventPublisher;
+	@Value("${token}") String token;
+	@Value("${userId}") String userId;
+	@Value("${id}") String id;
 	
+	@Autowired WebSocketStompClient stompClient; 
+	@Autowired ApplicationEventPublisher applicationEventPublisher;
+	@Autowired ObjectMapper objectMapper;
 	
 	AtomicBoolean isConnected = new AtomicBoolean(false);
 	StompSession stompSession;
-	Map<String,Subscription> subscriptions = new ConcurrentHashMap<>();
 	
 	@Scheduled(fixedDelay=10000)
 	private void connect() throws InterruptedException, ExecutionException, JSONException {
@@ -46,20 +49,26 @@ public class RemoteConnectionManager implements StompSessionHandler{
 		if (isConnected.compareAndSet(false, true)) {
 			try {
 				logger.info(String.format("Establishing websocket connection to %s", remoteUrl));
-				ListenableFuture<StompSession> connect = stompClient.connect(remoteUrl, this);
+				
+				WebSocketHttpHeaders handshakeHeaders = new WebSocketHttpHeaders();
+				handshakeHeaders.set("token", token);
+				handshakeHeaders.set("userId", userId);
+				
+				ListenableFuture<StompSession> connect = stompClient.connect(remoteUrl, handshakeHeaders, this);
 				stompSession = connect.get();
 				
 			} catch (Exception e) {
-				disconnect();
 				logger.error(String.format("Could not connect to %s", remoteUrl));
+				disconnect();
 			}
 		}
 	}
 	
 	public void send(Object message) {
 		if (isConnected.get() && stompSession != null) {
-			logger.info(String.format("Sending %s", message));
-			stompSession.send("/app/message", message);
+			String destination = "/app/message";
+			logger.info(String.format("Sending [%s]<- %s",destination, message));
+			stompSession.send(destination, message);
 		}
 	}
 	
@@ -68,12 +77,12 @@ public class RemoteConnectionManager implements StompSessionHandler{
 	public void afterConnected(StompSession session, StompHeaders connectedHeaders) {
 		logger.info(String.format("Connected to websocket %s", session.toString()));
 		
-		// subscribe to estimations topic
-		Subscription subscription = stompSession.subscribe("/topic/estimations", this);
-		subscriptions.put("/topic/estimations", subscription);
+		// subscribe to private channel
+		stompSession.subscribe("/user/queue/private", this);
 		
-		// send register message
-		send(new Action(Command.register,null));
+		// subscribe to estimations
+		stompSession.subscribe("/topic/estimations", this);
+		
 	}
 	
 	@Override
@@ -85,33 +94,40 @@ public class RemoteConnectionManager implements StompSessionHandler{
 	@Override
 	public void handleException(StompSession session, StompCommand command, StompHeaders headers, byte[] payload,
 			Throwable exception) {
-		logger.error(String.format("Exception while processing STOMP frame: %s, %s", exception.getMessage(), exception));
+		logger.error(String.format("Exception while processing STOMP frame: %s", exception.getMessage()), exception);
 		disconnect();
 	}
 	
 	@Override
 	public void handleFrame(StompHeaders headers, Object stompPayload) {
+		logger.info(String.format("Received [%s]-> %s", headers.getDestination(),stompPayload.toString()));
 		
-		if (headers.get("destination").get(0).equals("/topic/estimations")) {
-			Estimation estimation = ((ClientUpdate) stompPayload).get("payload");
-			logger.info(estimation.toString());
-			applicationEventPublisher.publishEvent(new EstimationEvent(this, estimation));			
+		if ("/topic/estimations".equals(headers.get("destination").get(0))) {
+			
+			JsonNode message = (JsonNode) stompPayload;
+			
+			try {
+				ClientUpdate update = objectMapper.treeToValue(message, ClientUpdate.class);
+				Estimation estimation = update.get("payload");
+				logger.info(estimation.toString());
+				applicationEventPublisher.publishEvent(new EstimationEvent(this, estimation));			
+			} catch (JsonProcessingException e) {
+				throw new RuntimeException(String.format("Can not parse %s", stompPayload));
+			}
 		}
-		
 	}
 	
 	@Override
 	public java.lang.reflect.Type getPayloadType(StompHeaders headers) {
-		return ClientUpdate.class;
+		return JsonNode.class;
 	}
 	
 	private void disconnect() {
-		isConnected.set(false);
 		if (stompSession != null) {
 			stompSession.disconnect();
 		}
 		stompSession = null;
-		subscriptions.clear();		
+		isConnected.set(false);
 	}
 	
 }

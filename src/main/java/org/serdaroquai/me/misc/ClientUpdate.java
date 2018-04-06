@@ -9,15 +9,15 @@ import org.serdaroquai.me.entity.Estimation;
 @SuppressWarnings("serial")
 public class ClientUpdate implements Serializable{
 
-	public static enum Type {
+	/*
 		test,
 		estimationsUpdate,
 		minerUpdate,
 		estimationLabelsUpdate,
 		poolUpdate,
-	}
+	*/
 	
-	private Type type;
+	private String type;
 	private Map<String,Estimation> payload = new HashMap<String,Estimation>();
 	
 	public ClientUpdate() {}
@@ -35,16 +35,16 @@ public class ClientUpdate implements Serializable{
 		return payload.get(key);
 	}
 	
-	public Type getType() {
+	public String getType() {
 		return type;
 	}
 	
 	public static class Of {
 		
-		Type type;
+		String type;
 		Map<String,Estimation> payload = new HashMap<String,Estimation>();
 		
-		public Of(Type type) {
+		public Of(String type) {
 			this.type = type;
 		}
 		
