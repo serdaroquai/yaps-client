@@ -1,8 +1,7 @@
 package org.serdaroquai.me.components;
 
 import org.serdaroquai.me.Action;
-import org.serdaroquai.me.entity.Estimation;
-import org.serdaroquai.me.event.EstimationEvent;
+import org.serdaroquai.me.event.ProfitabilityUpdateEvent;
 import org.serdaroquai.me.misc.UIUpdate;
 import org.serdaroquai.me.misc.UIUpdate.Type;
 import org.slf4j.Logger;
@@ -61,9 +60,8 @@ public class ApplicationController {
 	}
 
 	@EventListener
-	public void handleEstimationUpdate(EstimationEvent event) {
-		Estimation estimation = event.getPayload();
-		dispatch(new UIUpdate<Estimation>(Type.estimationsUpdate, estimation));
+	public void handleProfitabilityUpdate(ProfitabilityUpdateEvent event) {
+		dispatch(new UIUpdate<Void>(Type.profitabilityUpdate, null));
 	}
 
 }

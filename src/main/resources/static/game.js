@@ -49,7 +49,7 @@ const updateGame= (() => {
 			chartDifficulty.update();
 			*/
 			
-		} else if (message.type === "estimationsUpdate") {
+		} else if (message.type === "profitabilityUpdate") {
 			
 			// get latest data
 			$.post("api/estimations",{}, function(response, status){

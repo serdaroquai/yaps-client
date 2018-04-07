@@ -1,6 +1,7 @@
 package org.serdaroquai.me.components;
 
 import java.math.BigDecimal;
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -54,10 +55,10 @@ public class ProfitabilityManager {
 	
 	@EventListener
 	public void handleEvent(EstimationEvent event) {
-		Estimation estimation = event.getPayload();
 		
-		latestEstimations.put(estimation.getAlgo(), estimation);
-		
+		Collection<Estimation> estimations = event.getPayload();
+		estimations.forEach(estimation -> latestEstimations.put(estimation.getAlgo(), estimation));
+				
 		applicationEventPublisher.publishEvent(new ProfitabilityUpdateEvent(this, strategy));
 	}
 	

@@ -1,6 +1,6 @@
 package org.serdaroquai.me.components;
 
-import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -25,6 +25,7 @@ import org.springframework.web.socket.WebSocketHttpHeaders;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -112,9 +113,7 @@ public class RemoteConnectionManager implements StompSessionHandler{
 			try {
 				
 				Estimation estimation = objectMapper.treeToValue(message.get("payload").get("payload"), Estimation.class);
-				logger.info(estimation.toString());
-				
-				applicationEventPublisher.publishEvent(new EstimationEvent(this, estimation));	
+				applicationEventPublisher.publishEvent(new EstimationEvent(this, Arrays.asList(estimation)));	
 				
 			} catch (JsonProcessingException e) {
 				throw new RuntimeException(String.format("Can not parse %s", stompPayload));
@@ -126,9 +125,9 @@ public class RemoteConnectionManager implements StompSessionHandler{
 			if ("estimationsUpdate".equals(message.get("type").textValue())) {	
 				try {
 					
-					@SuppressWarnings("unchecked")
-					Map<Algorithm, BigDecimal> result = objectMapper.convertValue(message.get("payload"), Map.class);
-					logger.info(result.toString());
+					Map<Algorithm,Estimation> estimations = objectMapper.convertValue(message.get("payload"), new TypeReference<Map<Algorithm,Estimation>>() { });
+					applicationEventPublisher.publishEvent(new EstimationEvent(this, estimations.values()));
+					
 					
 				} catch (Exception e) {
 					throw new RuntimeException(String.format("Can not parse %s", stompPayload));

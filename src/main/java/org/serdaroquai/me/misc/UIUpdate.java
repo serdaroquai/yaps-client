@@ -6,10 +6,8 @@ import java.io.Serializable;
 public class UIUpdate<T> implements Serializable{
 
 	public static enum Type {
-		test,
-		estimationsUpdate,
+		profitabilityUpdate,
 		minerUpdate,
-		estimationLabelsUpdate,
 		poolUpdate
 	}
 	
