@@ -1,12 +1,14 @@
 package org.serdaroquai.me.components;
 
+import java.math.BigDecimal;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.json.JSONException;
 import org.serdaroquai.me.entity.Estimation;
 import org.serdaroquai.me.event.EstimationEvent;
-import org.serdaroquai.me.misc.ClientUpdate;
+import org.serdaroquai.me.misc.Algorithm;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -102,19 +104,41 @@ public class RemoteConnectionManager implements StompSessionHandler{
 	public void handleFrame(StompHeaders headers, Object stompPayload) {
 		logger.info(String.format("Received [%s]-> %s", headers.getDestination(),stompPayload.toString()));
 		
-		if ("/topic/estimations".equals(headers.get("destination").get(0))) {
-			
-			JsonNode message = (JsonNode) stompPayload;
+		JsonNode message = (JsonNode) stompPayload;
+		
+		switch (headers.get("destination").get(0)) {
+		case "/topic/estimations":
 			
 			try {
-				ClientUpdate update = objectMapper.treeToValue(message, ClientUpdate.class);
-				Estimation estimation = update.get("payload");
+				
+				Estimation estimation = objectMapper.treeToValue(message.get("payload").get("payload"), Estimation.class);
 				logger.info(estimation.toString());
-				applicationEventPublisher.publishEvent(new EstimationEvent(this, estimation));			
+				
+				applicationEventPublisher.publishEvent(new EstimationEvent(this, estimation));	
+				
 			} catch (JsonProcessingException e) {
 				throw new RuntimeException(String.format("Can not parse %s", stompPayload));
 			}
+			
+			break;
+		case "/user/queue/private":
+
+			if ("estimationsUpdate".equals(message.get("type").textValue())) {	
+				try {
+					
+					@SuppressWarnings("unchecked")
+					Map<Algorithm, BigDecimal> result = objectMapper.convertValue(message.get("payload"), Map.class);
+					logger.info(result.toString());
+					
+				} catch (Exception e) {
+					throw new RuntimeException(String.format("Can not parse %s", stompPayload));
+				}
+			}
+			break;
+		default:			
 		}
+		
+		
 	}
 	
 	@Override
