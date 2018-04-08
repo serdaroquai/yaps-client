@@ -43,11 +43,7 @@ public class ApplicationController {
 		
 		switch (destination) {
 		case "/topic/estimations":
-			
-//			Of builder = new ClientUpdate.Of("estimationsUpdate");
-//			estimationManager.getLatestEstimations().forEach((key,value) -> builder.with(key.toString(), value));
-			//dispatch 
-			
+			dispatch(new UIUpdate<Void>(Type.profitabilityUpdate, null));
 			break;
 		default:
 			

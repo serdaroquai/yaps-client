@@ -20,7 +20,6 @@ import org.springframework.messaging.simp.stomp.StompSession;
 import org.springframework.messaging.simp.stomp.StompSessionHandler;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.web.socket.WebSocketHttpHeaders;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
 
@@ -37,7 +36,7 @@ public class RemoteConnectionManager implements StompSessionHandler{
 	@Value("${remote.url:ws://yaps.serdarbaykan.com:8090/pokerNight}") String remoteUrl;
 	@Value("${token}") String token;
 	@Value("${userId}") String userId;
-	@Value("${id}") String id;
+	@Value("${id}") String rigId;
 	
 	@Autowired WebSocketStompClient stompClient; 
 	@Autowired ApplicationEventPublisher applicationEventPublisher;
@@ -56,9 +55,9 @@ public class RemoteConnectionManager implements StompSessionHandler{
 				WebSocketHttpHeaders handshakeHeaders = new WebSocketHttpHeaders();
 				handshakeHeaders.set("token", token);
 				handshakeHeaders.set("userId", userId);
+				handshakeHeaders.set("rigId", rigId);
 				
-				ListenableFuture<StompSession> connect = stompClient.connect(remoteUrl, handshakeHeaders, this);
-				stompSession = connect.get();
+				stompClient.connect(remoteUrl, handshakeHeaders, this);
 				
 			} catch (Exception e) {
 				logger.error(String.format("Could not connect to %s", remoteUrl));
@@ -80,6 +79,8 @@ public class RemoteConnectionManager implements StompSessionHandler{
 	public void afterConnected(StompSession session, StompHeaders connectedHeaders) {
 		logger.info(String.format("Connected to websocket %s", session.toString()));
 		
+		stompSession = session;
+				
 		// subscribe to private channel
 		stompSession.subscribe("/user/queue/private", this);
 		

@@ -114,14 +114,7 @@ const makeBarChart = (context, config) => {
 						chart.data.labels.push(algo)
 					}
 			}
-			/*
-			newState.estimations.forEach((estimation) => {
-				if (!chart.data.labels.includes(estimation.algo)) {
-					chart.data.labels.push(estimation.algo)
-				}
-			})
-			*/
-
+			
 			//for each label pull data
 			chart.data.labels.forEach((label) => {
 	        	
@@ -150,6 +143,7 @@ const chartEstimations = makeBarChart(document.getElementById("estimationsChart"
 			borderColor:'green',
 			borderWidth: 1,
 			data: [],
+			symbol: [],
 			spanGaps: true,
 		}]
     },
@@ -163,7 +157,15 @@ const chartEstimations = makeBarChart(document.getElementById("estimationsChart"
     	title:{
     		display:true,
     		text:'Estimation x Hashrate'
-    	}
+    	},
+    	tooltips: {
+            callbacks: {
+                label: function(tooltipItem, data) {
+                    var label = data.datasets[tooltipItem.datasetIndex].label || '';
+                    return label +"!"
+                }
+            }
+        }
     }
 });
 
