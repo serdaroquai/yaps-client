@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.Map;
 
 import org.serdaroquai.me.misc.Algorithm;
+import org.serdaroquai.me.misc.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,8 +21,8 @@ public class ApiController {
 	@Autowired ProfitabilityManager profitabilityManager;
 	
 	@RequestMapping(value ="/estimations")
-	public Map<Algorithm, BigDecimal> getNormalizedEstimations() {
-		return profitabilityManager.getLatestNormalizedEstimations();
+	public Map<Algorithm, Pair<String,BigDecimal>> getBrief() {
+		return profitabilityManager.getBrief();
 	}
 	
 }

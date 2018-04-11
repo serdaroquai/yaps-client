@@ -6,50 +6,14 @@ const updateGame= (() => {
 	// last state (by using a closure we make sure updateGame is the only method that has access to state
 	const currentState = 
 		{
-			'algo':'x17',
-			'estimations':{},
-			'blockChances':{},
-			'estimationLabels':[]
+			'estimations':{}
 		};
 	
 	
 	return (message) => {
 				
 		// map whole stomp message to body which is the message
-		if (message.type === "changeAlgo") {
-			
-			/*
-			// update current selected Algo
-			currentState.algo = message.selectedAlgo;
-
-			// initialize the charts			
-			charts.forEach((chart) => {
-				chart.initialize(message);
-				chart.update();
-			});
-
-			chartDifficulty.initialize(message);
-			chartDifficulty.update();
-			*/
-
-		} else if (message.type === "algoUpdate") {
-
-			/*
-			// update the charts			
-			charts.forEach((chart) => {
-				chart.addData(message);
-				chart.update();
-			});
-			*/
-			
-		} else if (message.type === "difficultyUpdate") {
-
-			/*
-			chartDifficulty.addData(message);
-			chartDifficulty.update();
-			*/
-			
-		} else if (message.type === "profitabilityUpdate") {
+		if (message.type === "profitabilityUpdate") {
 			
 			// get latest data
 			$.post("api/estimations",{}, function(response, status){
@@ -58,30 +22,11 @@ const updateGame= (() => {
 				chartEstimations.updateData(JSON.parse(JSON.stringify(currentState)));
 				chartEstimations.update();
 		    });
-
-			/*
-		    // get latest block chances
-			$.post("api/blockChances",{}, function(response, status){
-		        currentState.blockChances = response;
-
-    			chartBlockChances.updateData(JSON.parse(JSON.stringify(currentState)));
-				chartBlockChances.update();
-		    });
-		    */
 			
 		} else if (message.type === "minerUpdate") {
 			
 			document.getElementById("minerLog").innerHTML += "<div>"+ message.payload.line + "</div>";
 			
-		} else if (message.type === "estimationLabelsUpdate") {
-			
-			currentState.estimationLabels = message.payload.estimationLabels;
-			chartEstimations.initializeLabels(JSON.parse(JSON.stringify(currentState)));
-			chartEstimations.update();
-
-			chartBlockChances.initializeLabels(JSON.parse(JSON.stringify(currentState)));
-			chartBlockChances.update();
-
 		} else if (message.type === "poolUpdate") {
 			
 			// get latest data
@@ -116,11 +61,13 @@ const makeBarChart = (context, config) => {
 			}
 			
 			//for each label pull data
-			chart.data.labels.forEach((label) => {
+			chart.data.labels.forEach((algo) => {
 	        	
-	        	if (typeof newState.estimations[label] !== 'undefined') {
-	        		dataset.data.push(newState.estimations[label]);
+	        	if (typeof newState.estimations[algo] !== 'undefined') {
+	        		dataset.symbol.push(newState.estimations[algo].first) //coin symbol
+	        		dataset.data.push(newState.estimations[algo].second) // coin value
 	        	} else {
+	        		dataset.symbol.push("")
 	        		dataset.data.push(0)
 	        	}
     		});
@@ -161,8 +108,7 @@ const chartEstimations = makeBarChart(document.getElementById("estimationsChart"
     	tooltips: {
             callbacks: {
                 label: function(tooltipItem, data) {
-                    var label = data.datasets[tooltipItem.datasetIndex].label || '';
-                    return label +"!"
+                	return data.datasets[tooltipItem.datasetIndex].symbol[tooltipItem.index]+": " + data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index];
                 }
             }
         }
