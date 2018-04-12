@@ -12,9 +12,15 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationProperties
 public class Config {
 	
+	public static enum LoginParam {token,rigId,userId,version}
+	
 	private Map<Algorithm, BigDecimal> hashrateMap = new HashMap<>();
-	private Map<Long,BigDecimal> threshold = new HashMap<Long,BigDecimal>();
-
+	private Map<Long,BigDecimal> threshold = new HashMap<>();
+	private Map<String, String> login = new HashMap<>();
+	
+	public Map<String, String> getLogin() {
+		return login;
+	}
 	public Map<Long, BigDecimal> getThreshold() {
 		return threshold;
 	}

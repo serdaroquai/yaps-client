@@ -26,7 +26,7 @@ public class WebsocketConfig implements WebSocketMessageBrokerConfigurer {
 	public WebSocketStompClient webSocketClient(TaskScheduler taskScheduler) {
 		
 		List<Transport> transports = new ArrayList<Transport>();
-		transports.add(new WebSocketTransport( new StandardWebSocketClient()) );
+		transports.add(new WebSocketTransport( new StandardWebSocketClient()));
 		WebSocketClient transport = new SockJsClient(transports);
 		WebSocketStompClient stompClient = new WebSocketStompClient(transport);
 		
