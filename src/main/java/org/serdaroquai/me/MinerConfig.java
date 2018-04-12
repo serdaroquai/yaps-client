@@ -21,6 +21,7 @@ public class MinerConfig {
 		String path;
 		Algorithm algo;
 		String kill;
+		boolean active=true;
 		
 		public String getKill() {
 			return kill;
@@ -42,9 +43,16 @@ public class MinerConfig {
 		public void setAlgo(Algorithm algo) {
 			this.algo = algo;
 		}
+		public boolean isActive() {
+			return active;
+		}
+		public void setActive(boolean active) {
+			this.active = active;
+		}
+		
 		@Override
 		public String toString() {
-			return String.format("MinerContext [%s, %s]", algo, path);
+			return String.format("MinerContext [%s, %s, %s]", algo, path, isActive() ? "active" : "inactive");
 		}
 		
 	}

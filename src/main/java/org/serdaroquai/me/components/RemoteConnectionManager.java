@@ -1,14 +1,19 @@
 package org.serdaroquai.me.components;
 
+import static org.serdaroquai.me.misc.Util.isEmpty;
+
 import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.json.JSONException;
+import org.serdaroquai.me.Config;
+import org.serdaroquai.me.Config.LoginParam;
 import org.serdaroquai.me.entity.Estimation;
 import org.serdaroquai.me.event.EstimationEvent;
 import org.serdaroquai.me.misc.Algorithm;
+import org.serdaroquai.me.misc.ClientVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,7 +28,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.socket.WebSocketHttpHeaders;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -33,10 +37,8 @@ public class RemoteConnectionManager implements StompSessionHandler{
 
 	private final Logger logger = LoggerFactory.getLogger(this.getClass());
 	
+	@Autowired Config config;
 	@Value("${remote.url:ws://yaps.serdarbaykan.com:8090/pokerNight}") String remoteUrl;
-	@Value("${token}") String token;
-	@Value("${userId}") String userId;
-	@Value("${id}") String rigId;
 	
 	@Autowired WebSocketStompClient stompClient; 
 	@Autowired ApplicationEventPublisher applicationEventPublisher;
@@ -53,9 +55,12 @@ public class RemoteConnectionManager implements StompSessionHandler{
 				logger.info(String.format("Establishing websocket connection to %s", remoteUrl));
 				
 				WebSocketHttpHeaders handshakeHeaders = new WebSocketHttpHeaders();
-				handshakeHeaders.set("token", token);
-				handshakeHeaders.set("userId", userId);
-				handshakeHeaders.set("rigId", rigId);
+				config.getLogin().entrySet().stream()
+					.filter(entry -> !isEmpty(entry.getValue()))
+					.forEach(entry -> handshakeHeaders.add(entry.getKey(), entry.getValue()));
+
+				//set version
+				handshakeHeaders.set(LoginParam.version.name(), ClientVersion.version1.name());
 				
 				stompClient.connect(remoteUrl, handshakeHeaders, this);
 				
@@ -108,36 +113,32 @@ public class RemoteConnectionManager implements StompSessionHandler{
 		
 		JsonNode message = (JsonNode) stompPayload;
 		
-		switch (headers.get("destination").get(0)) {
-		case "/topic/estimations":
-			
-			try {
+		try {
+
+			switch (headers.get("destination").get(0)) {
+			case "/topic/estimations":
 				
 				Estimation estimation = objectMapper.treeToValue(message.get("payload").get("payload"), Estimation.class);
 				applicationEventPublisher.publishEvent(new EstimationEvent(this, Arrays.asList(estimation)));	
 				
-			} catch (JsonProcessingException e) {
-				throw new RuntimeException(String.format("Can not parse %s", stompPayload));
-			}
-			
-			break;
-		case "/user/queue/private":
-
-			if ("estimationsUpdate".equals(message.get("type").textValue())) {	
-				try {
-					
+				break;
+			case "/user/queue/private":
+	
+				if ("estimationsUpdate".equals(message.get("type").textValue())) {	
+						
 					Map<Algorithm,Estimation> estimations = objectMapper.convertValue(message.get("payload"), new TypeReference<Map<Algorithm,Estimation>>() { });
 					applicationEventPublisher.publishEvent(new EstimationEvent(this, estimations.values()));
-					
-					
-				} catch (Exception e) {
-					throw new RuntimeException(String.format("Can not parse %s", stompPayload));
+						
 				}
+				
+				break;
+			default:			
 			}
-			break;
-		default:			
-		}
 		
+		} catch (Exception e) {
+			// TODO update client necessary
+			logger.warn(String.format("Can not parse %s", stompPayload));
+		}
 		
 	}
 	
@@ -147,11 +148,14 @@ public class RemoteConnectionManager implements StompSessionHandler{
 	}
 	
 	private void disconnect() {
-		isConnected.set(false);
-		if (stompSession != null) {
-			stompSession.disconnect();
+		try {
+			if (stompSession != null) {
+				stompSession.disconnect();
+				stompSession = null;			
+			}
+		} finally {
+			isConnected.set(false);			
 		}
-		stompSession = null;
 	}
 	
 }
