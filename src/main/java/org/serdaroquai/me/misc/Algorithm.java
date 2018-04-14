@@ -19,7 +19,7 @@ public enum Algorithm {
 	MyriadGroestl("myr-gr",""),
 	Skunk("skunk",""),
 	X11("x11",""),
-	Scrpyt("scrypt",""),
+	Scrypt("scrypt",""),
 	Qubit("qubit",""),
 	BlakeCoin("blakecoin",""),
 	Hmq1725("hmq1725",""),
