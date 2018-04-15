@@ -52,6 +52,7 @@ const makeBarChart = (context, config) => {
 			
 			//clear data
 			dataset.data = [];
+			dataset.symbol = [];
 
 			//for each estimation create label if not exists
 			for (const [algo, value] of Object.entries(newState.estimations)) {
