@@ -9,6 +9,7 @@ import org.serdaroquai.me.event.MinerEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,7 @@ public class MinerService {
 	private final Logger logger = LoggerFactory.getLogger(this.getClass());
 	
 	@Autowired ApplicationEventPublisher applicationEventPublisher;
+	@Value("${minerStart.delay:2000}") long minerStartDelay;
 	
 	@Async
 	public Future<Void> startMiner(MinerContext context) {
@@ -46,7 +48,7 @@ public class MinerService {
         	try {
         		// wait two second before publishing its done event
         		// give it some time to cool off
-				Thread.sleep(2000);
+				Thread.sleep(minerStartDelay);
 			} catch (InterruptedException e) {}
         	applicationEventPublisher.publishEvent(new MinerEvent(this, context, started, null, true));
         }
