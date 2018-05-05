@@ -5,6 +5,7 @@ import java.util.Optional;
 
 public enum Algorithm {
 
+	X16S("x16s",""),
 	X16R("x16r",""),
 	X17("x17",""),
 	PHI1612("phi",""),

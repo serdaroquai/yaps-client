@@ -3,13 +3,18 @@ package org.serdaroquai.me.components;
 import static org.serdaroquai.me.misc.Util.isEmpty;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
+
+import javax.annotation.PostConstruct;
 
 import org.json.JSONException;
 import org.serdaroquai.me.Config;
 import org.serdaroquai.me.Config.LoginParam;
+import org.serdaroquai.me.PoolConfig;
 import org.serdaroquai.me.entity.Estimation;
 import org.serdaroquai.me.event.EstimationEvent;
 import org.serdaroquai.me.misc.Algorithm;
@@ -38,6 +43,7 @@ public class RemoteConnectionManager implements StompSessionHandler{
 	private final Logger logger = LoggerFactory.getLogger(this.getClass());
 	
 	@Autowired Config config;
+	@Autowired PoolConfig poolConfig;
 	@Value("${remote.url:ws://yaps.serdarbaykan.com:8090/pokerNight}") String remoteUrl;
 	
 	@Autowired WebSocketStompClient stompClient; 
@@ -46,6 +52,18 @@ public class RemoteConnectionManager implements StompSessionHandler{
 	
 	AtomicBoolean isConnected = new AtomicBoolean(false);
 	StompSession stompSession;
+	List<String> subscriptions;
+	
+	@PostConstruct
+	public void init() {
+		subscriptions = poolConfig.getPool().values().stream()
+			.map(pool -> String.format("/topic/%s", pool.getName()))
+			.collect(Collectors.toList());
+		
+		if (subscriptions.isEmpty()) {
+			throw new IllegalStateException("You need to set up a pool in config");
+		}
+	}
 	
 	@Scheduled(fixedDelay=10000)
 	private void connect() throws InterruptedException, ExecutionException, JSONException {
@@ -60,7 +78,7 @@ public class RemoteConnectionManager implements StompSessionHandler{
 					.forEach(entry -> handshakeHeaders.add(entry.getKey(), entry.getValue()));
 
 				//set version
-				handshakeHeaders.set(LoginParam.version.name(), ClientVersion.v1_01.name());
+				handshakeHeaders.set(LoginParam.version.name(), ClientVersion.v1_03.name());
 				
 				stompClient.connect(remoteUrl, handshakeHeaders, this);
 				
@@ -89,8 +107,8 @@ public class RemoteConnectionManager implements StompSessionHandler{
 		// subscribe to private channel
 		stompSession.subscribe("/user/queue/private", this);
 		
-		// subscribe to estimations
-		stompSession.subscribe("/topic/estimations", this);
+		// subscribe to pool estimations
+		subscriptions.forEach(to -> stompSession.subscribe(to, this));
 		
 	}
 	
@@ -115,24 +133,20 @@ public class RemoteConnectionManager implements StompSessionHandler{
 		
 		try {
 
-			switch (headers.get("destination").get(0)) {
-			case "/topic/estimations":
+			String destination = headers.get("destination").get(0);
+			if (subscriptions.contains(destination)) {
 				
 				Estimation estimation = objectMapper.treeToValue(message.get("payload").get("payload"), Estimation.class);
 				applicationEventPublisher.publishEvent(new EstimationEvent(this, Arrays.asList(estimation)));	
 				
-				break;
-			case "/user/queue/private":
-	
+			} else if ("/user/queue/private".equals(destination)) {
+				
 				if ("estimationsUpdate".equals(message.get("type").textValue())) {	
-						
+					
 					Map<Algorithm,Estimation> estimations = objectMapper.convertValue(message.get("payload"), new TypeReference<Map<Algorithm,Estimation>>() { });
 					applicationEventPublisher.publishEvent(new EstimationEvent(this, estimations.values()));
-						
+					
 				}
-				
-				break;
-			default:			
 			}
 		
 		} catch (Exception e) {
