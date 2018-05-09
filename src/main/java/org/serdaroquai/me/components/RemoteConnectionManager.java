@@ -78,7 +78,7 @@ public class RemoteConnectionManager implements StompSessionHandler{
 					.forEach(entry -> handshakeHeaders.add(entry.getKey(), entry.getValue()));
 
 				//set version
-				handshakeHeaders.set(LoginParam.version.name(), ClientVersion.v1_03.name());
+				handshakeHeaders.set(LoginParam.version.name(), ClientVersion.v1_04.name());
 				
 				stompClient.connect(remoteUrl, handshakeHeaders, this);
 				

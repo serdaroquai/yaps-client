@@ -5,6 +5,7 @@ import java.util.Optional;
 
 public enum Algorithm {
 
+	Lyra2z("lyra2z",""),
 	X16S("x16s",""),
 	X16R("x16r",""),
 	X17("x17",""),
