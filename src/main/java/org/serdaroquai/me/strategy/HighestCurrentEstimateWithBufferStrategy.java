@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -18,10 +19,11 @@ import org.serdaroquai.me.components.ProfitabilityManager;
 import org.serdaroquai.me.event.ProfitabilityUpdateEvent;
 import org.serdaroquai.me.event.StrategyChangeEvent;
 import org.serdaroquai.me.misc.Algorithm;
-import org.serdaroquai.me.strategy.HighestCurrentEstimateStrategy.HighestCurrentEstimateStrategyCondition;
+import org.serdaroquai.me.strategy.HighestCurrentEstimateWithBufferStrategy.HighestCurrentEstimateWithBufferStrategyCondition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Condition;
 import org.springframework.context.annotation.ConditionContext;
@@ -31,9 +33,9 @@ import org.springframework.core.type.AnnotatedTypeMetadata;
 import org.springframework.stereotype.Component;
 
 
-@Component("highestCurrentEstimate")
-@Conditional(HighestCurrentEstimateStrategyCondition.class)
-public class HighestCurrentEstimateStrategy implements IStrategy{
+@Component("highestCurrentEstimateWithBuffer")
+@Conditional(HighestCurrentEstimateWithBufferStrategyCondition.class)
+public class HighestCurrentEstimateWithBufferStrategy implements IStrategy{
 	
 	private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -42,12 +44,16 @@ public class HighestCurrentEstimateStrategy implements IStrategy{
 	@Autowired MinerConfig minerConfig;
 	@Autowired MinerManager minerManager;
 	
-	Strategy currentStrategy = Strategy.IDLE; 
-
-	public static class HighestCurrentEstimateStrategyCondition implements Condition {
+	//buffers the new strategy for at least the amount of time before publishing it
+	@Value("${strategy.debounceTime:5}") int debounceTime;
+	
+	Strategy currentStrategy = Strategy.IDLE;
+	Strategy bufferStrategy = null;
+	
+	public static class HighestCurrentEstimateWithBufferStrategyCondition implements Condition {
 		@Override
 		public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
-			return context.getEnvironment().getProperty("strategy.name").equals("highestCurrentEstimate");
+			return context.getEnvironment().getProperty("strategy.name").equals("highestCurrentEstimateWithBuffer");
 		}
 	}	
 	
@@ -68,9 +74,30 @@ public class HighestCurrentEstimateStrategy implements IStrategy{
 		Map<Algorithm, MinerContext> minerMap = minerConfig.getMinerMap();
 		
 		//remove the ones that are not mineable by config
-		Set<Algorithm> mineableAlgorithms = latestEstimations.keySet().stream()
+		final Set<Algorithm> mineableAlgorithms = latestEstimations.keySet().stream()
 				.filter(algo -> minerMap.containsKey(algo))
 				.collect(Collectors.toSet());
+		
+		// check custom rules 
+		Optional<Entry<Algorithm, BigDecimal>> findFirstRule = config.getPrioritize().entrySet().stream()
+			.filter(e -> mineableAlgorithms.contains(e.getKey()))
+			.filter(e -> latestEstimations.get(e.getKey()).compareTo(e.getValue()) > 0)
+			.findFirst();
+		
+		// if there is a rule
+		if (findFirstRule.isPresent()) {
+			Algorithm algo = findFirstRule.get().getKey();
+			BigDecimal ifAbove = findFirstRule.get().getValue();
+			BigDecimal latestEstimation = latestEstimations.get(algo);
+			
+			event.log(String.format("Following defined rule for %s being greater than %s, currentEstimation: %s ", 
+					algo, ifAbove, latestEstimation));
+			
+			event.setStrategy(new Strategy(algo));
+			return event;
+		} else {
+			event.log("No defined rules fulfill");
+		}
 		
 		// calculate the maximum estimation
 		Optional<BigDecimal> optional = mineableAlgorithms.stream()
@@ -98,7 +125,7 @@ public class HighestCurrentEstimateStrategy implements IStrategy{
 		}
 		
 		// filter out the choices that are below threshold
-		mineableAlgorithms = mineableAlgorithms.stream()
+		Set<Algorithm> filteredMineableAlgorithms = mineableAlgorithms.stream()
 			.filter(algo -> {
 					BigDecimal estimation = latestEstimations.get(algo) == null ? BigDecimal.ZERO : latestEstimations.get(algo);
 					boolean keep = estimation.compareTo(limit) >= 0;
@@ -110,7 +137,7 @@ public class HighestCurrentEstimateStrategy implements IStrategy{
 			.collect(Collectors.toSet());
 		
 		// check if current algo is among top paying one just keep it
-		boolean shouldStay = mineableAlgorithms.stream()
+		boolean shouldStay = filteredMineableAlgorithms.stream()
 			.anyMatch(algo -> algo.equals(currentStrategy.getAlgo()));
 		
 		if (shouldStay) {
@@ -118,7 +145,7 @@ public class HighestCurrentEstimateStrategy implements IStrategy{
 			return event;			
 		} else {
 			// else just pick the highest estimation
-			Optional<Algorithm> first = mineableAlgorithms.stream()
+			Optional<Algorithm> first = filteredMineableAlgorithms.stream()
 				.filter(algo -> max.compareTo(latestEstimations.get(algo)) == 0)
 				.findFirst();
 			
@@ -145,11 +172,50 @@ public class HighestCurrentEstimateStrategy implements IStrategy{
 		return config.getThreshold().get(key.orElse(0L));
 	}
 	
+	
+	
+	
 	@EventListener
 	public void onProfitabilityUpdateEvent(ProfitabilityUpdateEvent event) {
-		StrategyChangeEvent strategyChangeEvent = generateAction((ProfitabilityManager) event.getSource());
-		currentStrategy = strategyChangeEvent.getStrategy();
 		
-		applicationEventPublisher.publishEvent(strategyChangeEvent);
+		// TODO fix this ugly way of making sure we don't have concurrency issues
+		synchronized(this) {
+			
+			StrategyChangeEvent strategyChangeEvent = generateAction((ProfitabilityManager) event.getSource());
+			Strategy suggestedStrategy = strategyChangeEvent.getStrategy();
+			
+			if (!currentStrategy.equals(Strategy.IDLE) && !currentStrategy.equals(suggestedStrategy)) {
+				// if buffer is empty just buffer it
+				if (bufferStrategy == null) {
+					logger.info(String.format("Buffering %s", suggestedStrategy));
+					bufferStrategy = suggestedStrategy;
+				} else {
+					// we already have something buffered
+					if (suggestedStrategy.equals(bufferStrategy)) {
+						// check time is up
+						if (suggestedStrategy.getInstant().compareTo(bufferStrategy.getInstant().plusSeconds(debounceTime)) > 0) {
+							//time is up, publish new strategy
+							currentStrategy = suggestedStrategy;
+							bufferStrategy = null;
+							logger.info(String.format("DebounceTime is up. Publishing %s", suggestedStrategy));
+							applicationEventPublisher.publishEvent(strategyChangeEvent);
+						} else {
+							//no-op wait for debounce time
+						}
+						
+					} else {
+						//a new suggestion, rebuffer
+						logger.info(String.format("Rebuffering %s", suggestedStrategy));
+						bufferStrategy = suggestedStrategy;
+					}
+				}
+			} else {
+				// publish same strategy event
+				currentStrategy = suggestedStrategy;
+				bufferStrategy = null;
+				applicationEventPublisher.publishEvent(strategyChangeEvent);
+			}
+			
+		}
 	}
 }

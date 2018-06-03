@@ -2,6 +2,7 @@ package org.serdaroquai.me;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.serdaroquai.me.misc.Algorithm;
@@ -16,6 +17,7 @@ public class Config {
 	
 	private Map<Algorithm, BigDecimal> hashrateMap = new HashMap<>();
 	private Map<Long,BigDecimal> threshold = new HashMap<>();
+	private Map<Algorithm,BigDecimal> prioritize = new LinkedHashMap<>();
 	private Map<String, String> login = new HashMap<>();
 	
 	public Map<String, String> getLogin() {
@@ -27,5 +29,9 @@ public class Config {
 	public Map<Algorithm, BigDecimal> getHashrateMap() {
 		return hashrateMap;
 	}
+	public Map<Algorithm, BigDecimal> getPrioritize() {
+		return prioritize;
+	}
+	
 	
 }

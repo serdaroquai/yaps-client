@@ -6,6 +6,7 @@ import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
@@ -13,12 +14,17 @@ import javax.annotation.PostConstruct;
 import org.serdaroquai.me.Config;
 import org.serdaroquai.me.MinerConfig;
 import org.serdaroquai.me.MinerConfig.MinerContext;
+import org.serdaroquai.me.PoolConfig;
+import org.serdaroquai.me.PoolConfig.Pool;
 import org.serdaroquai.me.components.MinerManager;
 import org.serdaroquai.me.components.ProfitabilityManager;
+import org.serdaroquai.me.entity.PoolDetail;
+import org.serdaroquai.me.event.PoolDetailEvent;
 import org.serdaroquai.me.event.ProfitabilityUpdateEvent;
 import org.serdaroquai.me.event.StrategyChangeEvent;
 import org.serdaroquai.me.misc.Algorithm;
-import org.serdaroquai.me.strategy.HighestCurrentEstimateStrategy.HighestCurrentEstimateStrategyCondition;
+import org.serdaroquai.me.service.RestService;
+import org.serdaroquai.me.strategy.HighestCurrentOfTopNAverageStrategy.HighestCurrentOfTopNAverageStrategyCondition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,12 +34,13 @@ import org.springframework.context.annotation.ConditionContext;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.type.AnnotatedTypeMetadata;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 
-@Component("highestCurrentEstimate")
-@Conditional(HighestCurrentEstimateStrategyCondition.class)
-public class HighestCurrentEstimateStrategy implements IStrategy{
+@Component("highestCurrentOfTopNAverage")
+@Conditional(HighestCurrentOfTopNAverageStrategyCondition.class)
+public class HighestCurrentOfTopNAverageStrategy implements IStrategy{
 	
 	private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -41,13 +48,17 @@ public class HighestCurrentEstimateStrategy implements IStrategy{
 	@Autowired Config config;
 	@Autowired MinerConfig minerConfig;
 	@Autowired MinerManager minerManager;
+	@Autowired RestService restService;
+	@Autowired PoolConfig poolConfig;
 	
 	Strategy currentStrategy = Strategy.IDLE; 
-
-	public static class HighestCurrentEstimateStrategyCondition implements Condition {
+	
+	Map<Pool,Map<String,PoolDetail>> poolDetails = new ConcurrentHashMap<>();
+	
+	public static class HighestCurrentOfTopNAverageStrategyCondition implements Condition {
 		@Override
 		public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
-			return context.getEnvironment().getProperty("strategy.name").equals("highestCurrentEstimate");
+			return context.getEnvironment().getProperty("strategy.name").equals("highestCurrentOfTopNAverage");
 		}
 	}	
 	
@@ -55,6 +66,20 @@ public class HighestCurrentEstimateStrategy implements IStrategy{
 	private void init() {
 		logger.info(String.format("Initialize using %s", this.getClass()));
 	}
+	
+	@Scheduled(fixedDelayString="${strategy.poolQueryFrequency:30000}")
+	public void getPoolDetails() {
+		poolConfig.getPool().values().forEach(pool -> restService.getPoolDetails(pool));
+	}
+	
+	@EventListener
+	public void handle(PoolDetailEvent event) {
+		poolDetails.put(event.getPool(), event.getPayload());
+	}
+	
+//	private List<Algorithm> getTopNAlgorithmEstimations(@Value("${strategy.numberOfAlgos:5}") int n) {
+//		poolDetails.values().forEach(action);
+//	}
 
 	@Override
 	public StrategyChangeEvent generateAction(ProfitabilityManager manager) {
@@ -152,4 +177,5 @@ public class HighestCurrentEstimateStrategy implements IStrategy{
 		
 		applicationEventPublisher.publishEvent(strategyChangeEvent);
 	}
+
 }
