@@ -1,25 +1,35 @@
 package org.serdaroquai.me.strategy;
 
+import java.time.Instant;
+
 import org.serdaroquai.me.misc.Algorithm;
 
 public class Strategy {
 
-	public static final Strategy IDLE = new Strategy(null);
+	public static final Strategy IDLE = new Strategy();
 	
 	private Algorithm algo;
+	private Instant instant;
 	
-	public Strategy() {}
+	public Strategy() {
+		this(null, Instant.now());
+	}
 	
 	public Strategy(Algorithm algo) {
-		this.algo = algo;
+		this(algo, Instant.now());
 	}
-
+	
+	public Strategy(Algorithm algo, Instant instant) {
+		this.algo = algo;
+		this.instant = instant;
+	}
+	
 	public Algorithm getAlgo() {
 		return algo;
 	}
-
-	public void setAlgo(Algorithm algo) {
-		this.algo = algo;
+	
+	public Instant getInstant() {
+		return instant;
 	}
 
 	@Override
