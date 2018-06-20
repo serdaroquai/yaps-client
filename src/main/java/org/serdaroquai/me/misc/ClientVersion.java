@@ -6,5 +6,6 @@ public enum ClientVersion {
 	v1_02,
 	v1_03,
 	v1_04,
-	v1_05
+	v1_05,
+	v1_06
 }

@@ -21,6 +21,8 @@ public class MinerService {
 	
 	@Autowired ApplicationEventPublisher applicationEventPublisher;
 	@Value("${minerStart.delay:2000}") long minerStartDelay;
+	@Value("${miner.startMinimized:false}") boolean startMinimized;
+	
 	
 	@Async
 	public Future<Void> startMiner(MinerContext context) {
@@ -30,7 +32,10 @@ public class MinerService {
 		try {
 			
 			logger.info("Starting miner process " + context.toString());
-			Runtime.getRuntime().exec(String.format("cmd /c start %s", context.getPath()));
+			Runtime.getRuntime().exec(String.format("cmd /c start %s%s", 
+					startMinimized ? "/min " : "",
+					context.getPath()));
+			
 			applicationEventPublisher.publishEvent(new MinerEvent(this, context, started, "Started " + context, false));
 	        
     		try {
