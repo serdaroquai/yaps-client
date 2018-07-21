@@ -31,6 +31,7 @@ public class NotificationsManager {
 	@EventListener
 	public void handle(StatusEvent event) {
 		StringBuilder status = new StringBuilder();
+		status.append(config.getLogin().get(LoginParam.rigId.name())).append("\n");
 		gpuManager.getGpuReadings().values().forEach(reading -> status.append(reading.toString()).append("\n"));
 		status.append(minerManager.getDigest());
 		
