@@ -8,9 +8,8 @@ import org.serdaroquai.me.MinerConfig;
 import org.serdaroquai.me.MinerConfig.MinerContext;
 import org.serdaroquai.me.event.MinerEvent;
 import org.serdaroquai.me.event.StrategyChangeEvent;
-import org.serdaroquai.me.misc.Algorithm;
 import org.serdaroquai.me.misc.MinerStatus;
-import org.serdaroquai.me.service.MinerService;
+import org.serdaroquai.me.service.ProcessService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,13 +31,13 @@ public class MinerManagerV2 {
 	AtomicReference<MinerStatus> minerStatus = new AtomicReference<MinerStatus>(MinerStatus.STOPPED);
 	
 	@Autowired ApplicationEventPublisher applicationEventPublisher;
-	@Autowired MinerService minerService;
+	@Autowired ProcessService minerService;
 	@Autowired MinerConfig minerConfig;
 	
 	
 	Future<Void> activeMiner;
 	AtomicReference<Optional<MinerContext>> activeContext = new AtomicReference<Optional<MinerContext>>(Optional.empty()); 
-	AtomicReference<Optional<Algorithm>> targetAlgorithm = new AtomicReference<Optional<Algorithm>>(Optional.empty());
+	AtomicReference<Optional<String>> targetAlgorithm = new AtomicReference<Optional<String>>(Optional.empty());
 	
 	@EventListener
 	public void handleMinerEvent(MinerEvent event) {
@@ -73,17 +72,20 @@ public class MinerManagerV2 {
 		}
 	}
 	
+	
+	@SuppressWarnings("unused")
 	private Runnable mine(MinerContext context) {
 		return () -> startMiner(context);
 	}
 	
+	@SuppressWarnings("unused")
 	private Runnable stop() {
 		return () -> stopMiner();
 	}
 	
 	@EventListener
 	public void onStrategyChangeEvent(StrategyChangeEvent event) {
-		Algorithm algo = event.getStrategy().getAlgo();
+		String algo = event.getStrategy().getAlgo();
 		
 		MinerContext minerContext = minerConfig.getMinerMap().get(algo);
 		if (minerContext != null) {

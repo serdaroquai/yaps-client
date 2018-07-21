@@ -18,7 +18,6 @@ import org.serdaroquai.me.components.MinerManager;
 import org.serdaroquai.me.components.ProfitabilityManager;
 import org.serdaroquai.me.event.ProfitabilityUpdateEvent;
 import org.serdaroquai.me.event.StrategyChangeEvent;
-import org.serdaroquai.me.misc.Algorithm;
 import org.serdaroquai.me.strategy.HighestCurrentEstimateWithBufferStrategy.HighestCurrentEstimateWithBufferStrategyCondition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,25 +67,25 @@ public class HighestCurrentEstimateWithBufferStrategy implements IStrategy{
 		StrategyChangeEvent event = new StrategyChangeEvent(this, currentStrategy);
 		
 		// algo-tag, estimation
-		Map<Algorithm, BigDecimal> latestEstimations = manager.getLatestNormalizedEstimations();
+		Map<String, BigDecimal> latestEstimations = manager.getLatestNormalizedEstimations();
 		
 		// algo, miner (mineable ones) 
-		Map<Algorithm, MinerContext> minerMap = minerConfig.getMinerMap();
+		Map<String, MinerContext> minerMap = minerConfig.getMinerMap();
 		
 		//remove the ones that are not mineable by config
-		final Set<Algorithm> mineableAlgorithms = latestEstimations.keySet().stream()
+		final Set<String> mineableAlgorithms = latestEstimations.keySet().stream()
 				.filter(algo -> minerMap.containsKey(algo))
 				.collect(Collectors.toSet());
 		
 		// check custom rules 
-		Optional<Entry<Algorithm, BigDecimal>> findFirstRule = config.getPrioritize().entrySet().stream()
+		Optional<Entry<String, BigDecimal>> findFirstRule = config.getPrioritize().entrySet().stream()
 			.filter(e -> mineableAlgorithms.contains(e.getKey()))
 			.filter(e -> latestEstimations.get(e.getKey()).compareTo(e.getValue()) > 0)
 			.findFirst();
 		
 		// if there is a rule
 		if (findFirstRule.isPresent()) {
-			Algorithm algo = findFirstRule.get().getKey();
+			String algo = findFirstRule.get().getKey();
 			BigDecimal ifAbove = findFirstRule.get().getValue();
 			BigDecimal latestEstimation = latestEstimations.get(algo);
 			
@@ -125,7 +124,7 @@ public class HighestCurrentEstimateWithBufferStrategy implements IStrategy{
 		}
 		
 		// filter out the choices that are below threshold
-		Set<Algorithm> filteredMineableAlgorithms = mineableAlgorithms.stream()
+		Set<String> filteredMineableAlgorithms = mineableAlgorithms.stream()
 			.filter(algo -> {
 					BigDecimal estimation = latestEstimations.get(algo) == null ? BigDecimal.ZERO : latestEstimations.get(algo);
 					boolean keep = estimation.compareTo(limit) >= 0;
@@ -145,11 +144,11 @@ public class HighestCurrentEstimateWithBufferStrategy implements IStrategy{
 			return event;			
 		} else {
 			// else just pick the highest estimation
-			Optional<Algorithm> first = filteredMineableAlgorithms.stream()
+			Optional<String> first = filteredMineableAlgorithms.stream()
 				.filter(algo -> max.compareTo(latestEstimations.get(algo)) == 0)
 				.findFirst();
 			
-			Algorithm algorithm = first.get();
+			String algorithm = first.get();
 			event.log(String.format("Changing to: %s with estimation: %s", 
 					algorithm, 
 					latestEstimations.get(algorithm)));

@@ -3,7 +3,6 @@ package org.serdaroquai.me.components;
 import java.math.BigDecimal;
 import java.util.Map;
 
-import org.serdaroquai.me.misc.Algorithm;
 import org.serdaroquai.me.misc.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,8 +19,9 @@ public class ApiController {
 
 	@Autowired ProfitabilityManager profitabilityManager;
 	
+	//algo, bigdecimal
 	@RequestMapping(value ="/estimations")
-	public Map<Algorithm, Pair<String,BigDecimal>> getBrief() {
+	public Map<String, Pair<String,BigDecimal>> getBrief() {
 		return profitabilityManager.getBrief();
 	}
 	

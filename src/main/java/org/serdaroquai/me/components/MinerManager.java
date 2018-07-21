@@ -16,8 +16,7 @@ import org.serdaroquai.me.MinerConfig.MinerContext;
 import org.serdaroquai.me.event.MinerEvent;
 import org.serdaroquai.me.event.MinerUpdateEvent;
 import org.serdaroquai.me.event.StrategyChangeEvent;
-import org.serdaroquai.me.misc.Algorithm;
-import org.serdaroquai.me.service.MinerService;
+import org.serdaroquai.me.service.ProcessService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,7 +37,7 @@ public class MinerManager {
 	private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
 	@Autowired ApplicationEventPublisher applicationEventPublisher;
-	@Autowired MinerService minerService;
+	@Autowired ProcessService processService;
 	@Autowired MinerConfig minerConfig;
 	
 	@Value("${miner.enable:true}") boolean isEnabled;
@@ -46,8 +45,8 @@ public class MinerManager {
 	
 	
 	Future<Void> activeMiner;
-	Algorithm activeAlgo = null;
-	Algorithm targetAlgo = null;
+	String activeAlgo = null;
+	String targetAlgo = null;
 	StrategyChangeEvent latestEvent;
 	
 	AtomicBoolean isShuttingDown = new AtomicBoolean(false);
@@ -95,7 +94,7 @@ public class MinerManager {
 		}
 	}
 	
-	public void startMiner(Algorithm algo) {
+	public void startMiner(String algo) {
 		
 		if (!isEnabled) {
 			return;
@@ -112,7 +111,7 @@ public class MinerManager {
 			//isStarted = true, isShuttingDown = false
 			
 			// start miner
-			activeMiner = minerService.startMiner(minerContext);
+			activeMiner = processService.startMiner(minerContext);
 			activeAlgo = minerContext.getAlgo();
 			startedSince = LocalDateTime.now();
 			
@@ -145,7 +144,7 @@ public class MinerManager {
 	}
 	
 	public String getDigest() {
-		return String.format("activeAglo: %s, targetAlgo: %s, isStarted: %s, isShuttingDown: %s, startedSince: %s, latest strategy logs: %s", 
+		return String.format("activeAlgo: %s\ntargetAlgo: %s\nisStarted: %s\nisShuttingDown: %s\nstartedSince: %s\n%s\n", 
 				activeAlgo, 
 				targetAlgo, 
 				isStarted.get(), 
@@ -196,7 +195,7 @@ public class MinerManager {
 	 * @param algo
 	 * @return
 	 */
-	public long getTotalMiningSeconds(Algorithm algo) {
+	public long getTotalMiningSeconds(String algo) {
 				
 		long totalMillis = 0;
 		long tempStart = 0;
@@ -223,7 +222,8 @@ public class MinerManager {
 		return totalMillis / 1000;
 	}
 	
-	public Map<Algorithm,Long> getTotalMiningTime() {
+	//algo, millis
+	public Map<String,Long> getTotalMiningTime() {
 		return minerConfig.getMinerMap().keySet().stream()
 			.collect(Collectors.toMap(algo -> algo,algo -> getTotalMiningSeconds(algo)));
 	}

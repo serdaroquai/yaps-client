@@ -2,15 +2,13 @@ package org.serdaroquai.me.entity;
 
 import java.math.BigDecimal;
 
-import org.serdaroquai.me.misc.Algorithm;
-
 
 public class Estimation {
 
     String id;
 	BigDecimal btcRevenue;
 	long timestamp;
-	Algorithm algo;
+	String algo;
 	String symbol;
 	BigDecimal difficulty;
 	Integer blockHeight;
@@ -35,10 +33,10 @@ public class Estimation {
 	public void setTimestamp(long timestamp) {
 		this.timestamp = timestamp;
 	}
-	public Algorithm getAlgo() {
+	public String getAlgo() {
 		return algo;
 	}
-	public void setAlgo(Algorithm algo) {
+	public void setAlgo(String algo) {
 		this.algo = algo;
 	}
 	public String getSymbol() {
