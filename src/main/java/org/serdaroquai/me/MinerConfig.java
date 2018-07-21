@@ -3,7 +3,6 @@ package org.serdaroquai.me;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.serdaroquai.me.misc.Algorithm;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
@@ -11,15 +10,16 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationProperties
 public class MinerConfig {
 
-	private Map<Algorithm, MinerContext> minerMap = new HashMap<>();
+	//algo, minercontext
+	private Map<String, MinerContext> minerMap = new HashMap<>();
 	
-	public Map<Algorithm, MinerContext> getMinerMap() {
+	public Map<String, MinerContext> getMinerMap() {
 		return minerMap;
 	}
 
 	public static class MinerContext {
 		String path;
-		Algorithm algo;
+		String algo;
 		String kill;
 		boolean active=true;
 		
@@ -37,10 +37,10 @@ public class MinerConfig {
 		public void setPath(String path) {
 			this.path = path;
 		}
-		public Algorithm getAlgo() {
+		public String getAlgo() {
 			return algo;
 		}
-		public void setAlgo(Algorithm algo) {
+		public void setAlgo(String algo) {
 			this.algo = algo;
 		}
 		public boolean isActive() {

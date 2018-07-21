@@ -42,7 +42,7 @@ public class StrategyChangeEvent extends ApplicationEvent{
 	
 	public String getLogsAsString() {
 		return logs.stream()
-			.reduce((first,second) -> first + "," + second)
+			.reduce((first,second) -> first + "\n" + second)
 			.orElse("");
 	}
 

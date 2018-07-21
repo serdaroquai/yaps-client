@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.serdaroquai.me.misc.Algorithm;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
@@ -15,9 +14,11 @@ public class Config {
 	
 	public static enum LoginParam {token,rigId,userId,version}
 	
-	private Map<Algorithm, BigDecimal> hashrateMap = new HashMap<>();
+	//algo,bigdecimal
+	private Map<String, BigDecimal> hashrateMap = new HashMap<>();
 	private Map<Long,BigDecimal> threshold = new HashMap<>();
-	private Map<Algorithm,BigDecimal> prioritize = new LinkedHashMap<>();
+	//algo,bigdecimal
+	private Map<String,BigDecimal> prioritize = new LinkedHashMap<>();
 	private Map<String, String> login = new HashMap<>();
 	
 	public Map<String, String> getLogin() {
@@ -26,10 +27,10 @@ public class Config {
 	public Map<Long, BigDecimal> getThreshold() {
 		return threshold;
 	}
-	public Map<Algorithm, BigDecimal> getHashrateMap() {
+	public Map<String, BigDecimal> getHashrateMap() {
 		return hashrateMap;
 	}
-	public Map<Algorithm, BigDecimal> getPrioritize() {
+	public Map<String, BigDecimal> getPrioritize() {
 		return prioritize;
 	}
 	

@@ -12,7 +12,6 @@ import org.serdaroquai.me.Config;
 import org.serdaroquai.me.entity.Estimation;
 import org.serdaroquai.me.event.EstimationEvent;
 import org.serdaroquai.me.event.ProfitabilityUpdateEvent;
-import org.serdaroquai.me.misc.Algorithm;
 import org.serdaroquai.me.misc.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,14 +29,15 @@ public class ProfitabilityManager {
 	@Autowired Config config;
 	@Autowired ApplicationEventPublisher applicationEventPublisher;
 	
-	Map<Algorithm,Estimation> latestEstimations = new ConcurrentHashMap<>();
+	//algo,estimation
+	Map<String,Estimation> latestEstimations = new ConcurrentHashMap<>();
 	
-	public Map<Algorithm,BigDecimal> getLatestEstimations() {
+	public Map<String,BigDecimal> getLatestEstimations() {
 		return latestEstimations.entrySet().stream()
 			.collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().getBtcRevenue()));
 	}
 	
-	public Map<Algorithm,BigDecimal> getLatestNormalizedEstimations() {
+	public Map<String,BigDecimal> getLatestNormalizedEstimations() {
 		
 		return getLatestEstimations().entrySet().stream()
 				.filter(e -> config.getHashrateMap().containsKey(e.getKey()))
@@ -46,11 +46,13 @@ public class ProfitabilityManager {
 						e -> multiply.apply(benchmarkOf.apply(e.getKey()), e.getValue())));
 	}
 	
-	private Function<Algorithm, BigDecimal> benchmarkOf = (algo) -> config.getHashrateMap().getOrDefault(algo, BigDecimal.ZERO);
+	//algo,bigdecimal
+	private Function<String, BigDecimal> benchmarkOf = (algo) -> config.getHashrateMap().getOrDefault(algo, BigDecimal.ZERO);
 	private BinaryOperator<BigDecimal> multiply = (first, second) -> first.multiply(second);
 	private Function<Estimation, BigDecimal> normalize = (estimation) -> multiply.apply(benchmarkOf.apply(estimation.getAlgo()), estimation.getBtcRevenue());
 
-	public Map<Algorithm, Pair<String,BigDecimal>> getBrief() {
+	//algo,bigdecimal
+	public Map<String, Pair<String,BigDecimal>> getBrief() {
 		return latestEstimations.values().parallelStream()
 			.filter(estimation -> config.getHashrateMap().containsKey(estimation.getAlgo()))
 			.collect(Collectors.toMap(

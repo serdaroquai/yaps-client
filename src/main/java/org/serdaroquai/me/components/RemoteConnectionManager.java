@@ -17,7 +17,7 @@ import org.serdaroquai.me.Config.LoginParam;
 import org.serdaroquai.me.PoolConfig;
 import org.serdaroquai.me.entity.Estimation;
 import org.serdaroquai.me.event.EstimationEvent;
-import org.serdaroquai.me.misc.Algorithm;
+import org.serdaroquai.me.event.StatusEvent;
 import org.serdaroquai.me.misc.ClientVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,8 +77,9 @@ public class RemoteConnectionManager implements StompSessionHandler{
 					.filter(entry -> !isEmpty(entry.getValue()))
 					.forEach(entry -> handshakeHeaders.add(entry.getKey(), entry.getValue()));
 
-				//set version
-				handshakeHeaders.set(LoginParam.version.name(), ClientVersion.v1_06.name());
+				//set version to latest version
+				int numOfVersions = ClientVersion.values().length;
+				handshakeHeaders.set(LoginParam.version.name(), ClientVersion.values()[numOfVersions-1].name());
 				
 				stompClient.connect(remoteUrl, handshakeHeaders, this);
 				
@@ -143,9 +144,11 @@ public class RemoteConnectionManager implements StompSessionHandler{
 				
 				if ("estimationsUpdate".equals(message.get("type").textValue())) {	
 					
-					Map<Algorithm,Estimation> estimations = objectMapper.convertValue(message.get("payload"), new TypeReference<Map<Algorithm,Estimation>>() { });
+					Map<String,Estimation> estimations = objectMapper.convertValue(message.get("payload"), new TypeReference<Map<String,Estimation>>() { });
 					applicationEventPublisher.publishEvent(new EstimationEvent(this, estimations.values()));
 					
+				} else if ("status".equals(message.get("type").textValue())) {
+					applicationEventPublisher.publishEvent(new StatusEvent(this));
 				}
 			}
 		

@@ -17,7 +17,6 @@ import org.serdaroquai.me.components.MinerManager;
 import org.serdaroquai.me.components.ProfitabilityManager;
 import org.serdaroquai.me.event.ProfitabilityUpdateEvent;
 import org.serdaroquai.me.event.StrategyChangeEvent;
-import org.serdaroquai.me.misc.Algorithm;
 import org.serdaroquai.me.strategy.HighestCurrentEstimateStrategy.HighestCurrentEstimateStrategyCondition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,13 +61,13 @@ public class HighestCurrentEstimateStrategy implements IStrategy{
 		StrategyChangeEvent event = new StrategyChangeEvent(this, currentStrategy);
 		
 		// algo-tag, estimation
-		Map<Algorithm, BigDecimal> latestEstimations = manager.getLatestNormalizedEstimations();
+		Map<String, BigDecimal> latestEstimations = manager.getLatestNormalizedEstimations();
 		
 		// algo, miner (mineable ones) 
-		Map<Algorithm, MinerContext> minerMap = minerConfig.getMinerMap();
+		Map<String, MinerContext> minerMap = minerConfig.getMinerMap();
 		
 		//remove the ones that are not mineable by config
-		Set<Algorithm> mineableAlgorithms = latestEstimations.keySet().stream()
+		Set<String> mineableAlgorithms = latestEstimations.keySet().stream()
 				.filter(algo -> minerMap.containsKey(algo))
 				.collect(Collectors.toSet());
 		
@@ -117,12 +116,12 @@ public class HighestCurrentEstimateStrategy implements IStrategy{
 			event.log(String.format("%s is still above threshold, keeping same algo", currentStrategy.getAlgo()));
 			return event;			
 		} else {
-			// else just pick the highest estimation
-			Optional<Algorithm> first = mineableAlgorithms.stream()
+			// else just pick the highest estimated algo
+			Optional<String> first = mineableAlgorithms.stream()
 				.filter(algo -> max.compareTo(latestEstimations.get(algo)) == 0)
 				.findFirst();
 			
-			Algorithm algorithm = first.get();
+			String algorithm = first.get();
 			event.log(String.format("Changing to: %s with estimation: %s", 
 					algorithm, 
 					latestEstimations.get(algorithm)));
